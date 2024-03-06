@@ -1,13 +1,14 @@
 -- ==============================================================
--- Vitis HLS - High-Level Synthesis from C, C++ and OpenCL v2020.2 (64-bit)
--- Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+-- Vitis HLS - High-Level Synthesis from C, C++ and OpenCL v2022.2 (64-bit)
+-- Version: 2022.2
+-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 -- ==============================================================
 Library ieee;
 use ieee.std_logic_1164.all;
 
 entity fop_fcmp_32ns_32ns_1_2_no_dsp_1 is
     generic (
-        ID         : integer := 5;
+        ID         : integer := 1;
         NUM_STAGE  : integer := 2;
         din0_WIDTH : integer := 32;
         din1_WIDTH : integer := 32;
@@ -26,7 +27,7 @@ end entity;
 
 architecture arch of fop_fcmp_32ns_32ns_1_2_no_dsp_1 is
     --------------------- Component ---------------------
-    component fop_ap_fcmp_0_no_dsp_32 is
+    component fop_fcmp_32ns_32ns_1_2_no_dsp_1_ip is
         port (
             s_axis_a_tvalid         : in  std_logic;
             s_axis_a_tdata          : in  std_logic_vector(31 downto 0);
@@ -72,7 +73,7 @@ architecture arch of fop_fcmp_32ns_32ns_1_2_no_dsp_1 is
     signal dout_r    : std_logic_vector(dout_WIDTH-1 downto 0);
 begin
     --------------------- Instantiation -----------------
-    fop_ap_fcmp_0_no_dsp_32_u : component fop_ap_fcmp_0_no_dsp_32
+    fop_fcmp_32ns_32ns_1_2_no_dsp_1_ip_u : component fop_fcmp_32ns_32ns_1_2_no_dsp_1_ip
     port map (
         s_axis_a_tvalid         => a_tvalid,
         s_axis_a_tdata          => a_tdata,

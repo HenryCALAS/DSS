@@ -32,7 +32,7 @@ $OPT -load $DASS/dhls/elastic-circuits/build/MemElemInfo/libLLVMMemElemInfo.so \
 -load $DASS/dhls/elastic-circuits/build/OptimizeBitwidth/libLLVMOptimizeBitWidth.so \
 -load $DASS/dhls/elastic-circuits/build/MyCFGPass/libMyCFGPass.so \
 -load $DASS/dass/build/Synthesis/libSynthesis.so \
--ss-wrapper-gen $IN -S -ir_dir=./vhls -has_ip=true -dass_dir=$DASS -has_offset=$OFFSET -optimize-loop=$OPTIMIZELOOP > /dev/null
+-ss-wrapper-gen $IN -S -ir_dir=./vhls -has_ip=true -dass_dir=$DASS -has_offset=$OFFSET > /dev/null
 
 rm -f *_freq.txt stats out.txt debug_func
 
@@ -44,7 +44,7 @@ $OPT -load $DASS/dhls/elastic-circuits/build/MemElemInfo/libLLVMMemElemInfo.so \
 -load $DASS/dhls/elastic-circuits/build/OptimizeBitwidth/libLLVMOptimizeBitWidth.so \
 -load $DASS/dhls/elastic-circuits/build/MyCFGPass/libMyCFGPass.so \
 -load $DASS/dass/build/Synthesis/libSynthesis.so \
--dass-vhdl-rewrite $IN -S -top=$NAME -optimize-loop=$OPTIMIZELOOP > /dev/null
+-dass-vhdl-rewrite $IN -S -top=$NAME > /dev/null
 mv rtl/$NAME.vhd rtl/${NAME}_debug
 
 $OPT -load $DASS/dhls/elastic-circuits/build/MemElemInfo/libLLVMMemElemInfo.so \
@@ -52,13 +52,13 @@ $OPT -load $DASS/dhls/elastic-circuits/build/MemElemInfo/libLLVMMemElemInfo.so \
 -load $DASS/dhls/elastic-circuits/build/OptimizeBitwidth/libLLVMOptimizeBitWidth.so \
 -load $DASS/dhls/elastic-circuits/build/MyCFGPass/libMyCFGPass.so \
 -load $DASS/dass/build/Synthesis/libSynthesis.so \
--collect-ss-rtl $IN -S -rtl=verilog -dass_dir=$DASS -has_ip=true -optimize-loop=$OPTIMIZELOOP > /dev/null
+-collect-ss-rtl $IN -S -rtl=verilog -dass_dir=$DASS -has_ip=true > /dev/null
 
 # Use library in VHDL 2008
 # cp $DASS/dhls/components/* rtl/
 # Use library in VHDL 2003
 cp $DASS/dass/components/*.v* rtl/
-cp $DASS/dass/components/ip/*.v* rtl/
+cp $DASS/dass/components/ip_zynq/*.v* rtl/
 
 if ls ./rtl/*.v 1> /dev/null 2>&1; then
     for file in ./rtl/*.v; do

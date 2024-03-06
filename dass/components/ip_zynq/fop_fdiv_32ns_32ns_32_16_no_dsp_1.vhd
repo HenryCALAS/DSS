@@ -1,14 +1,15 @@
 -- ==============================================================
--- Vitis HLS - High-Level Synthesis from C, C++ and OpenCL v2020.2 (64-bit)
--- Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+-- Vitis HLS - High-Level Synthesis from C, C++ and OpenCL v2022.2 (64-bit)
+-- Version: 2022.2
+-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 -- ==============================================================
 Library ieee;
 use ieee.std_logic_1164.all;
 
 entity fop_fdiv_32ns_32ns_32_16_no_dsp_1 is
     generic (
-        ID         : integer := 4;
-        NUM_STAGE  : integer := 16;
+        ID         : integer := 1;
+        NUM_STAGE  : integer := 3;
         din0_WIDTH : integer := 32;
         din1_WIDTH : integer := 32;
         dout_WIDTH : integer := 32
@@ -25,7 +26,7 @@ end entity;
 
 architecture arch of fop_fdiv_32ns_32ns_32_16_no_dsp_1 is
     --------------------- Component ---------------------
-    component fop_ap_fdiv_14_no_dsp_32 is
+    component fop_fdiv_32ns_32ns_32_16_no_dsp_1_ip is
         port (
             aclk                 : in  std_logic;
             aclken               : in  std_logic;
@@ -53,7 +54,7 @@ architecture arch of fop_fdiv_32ns_32ns_32_16_no_dsp_1 is
     signal dout_r    : std_logic_vector(dout_WIDTH-1 downto 0);
 begin
     --------------------- Instantiation -----------------
-    fop_ap_fdiv_14_no_dsp_32_u : component fop_ap_fdiv_14_no_dsp_32
+    fop_fdiv_32ns_32ns_32_16_no_dsp_1_ip_u : component fop_fdiv_32ns_32ns_32_16_no_dsp_1_ip
     port map (
         aclk                 => aclk,
         aclken               => aclken,

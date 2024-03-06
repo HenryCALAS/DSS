@@ -102,6 +102,17 @@ namespace hls_verify {
             "	end loop;\n"
             "end process;\n"
             "\n"
+            "----------------------------------------------------------------------------\n"
+            "cycle_count: process\n"
+            "begin\n"
+            "   while (true) loop\n"
+            "       wait until tb_clk'event and tb_clk = '1';\n"
+            "       if (tb_rst = '0') then\n"
+            "           cycle_cnt := cycle_cnt + 1;\n"
+            "       end if;\n"
+            "   end loop;\n"
+            "end process;\n"
+            "\n"
             "----------------------------------------------------------------------------\n\n";
 
     // class Constant
@@ -335,6 +346,7 @@ namespace hls_verify {
             Constant c = constants[i];
             code << "\t" << "constant " << c.constName << " : " << c.constType << " := " << c.constValue << ";" << endl;
         }
+        code << "\t" << "constant CYCLE_data : STRING := \"./cycle.dat\";" << endl;
         return code.str();
     }
 
@@ -385,6 +397,7 @@ namespace hls_verify {
 
         code << "\tsignal tb_temp_idle : std_logic:= '1';" << endl;
         code << "\tshared variable transaction_idx : INTEGER := 0;" << endl;
+        code << "\tshared variable cycle_cnt : INTEGER := 0;" << endl;
 
         return code.str();
     }
@@ -726,6 +739,28 @@ namespace hls_verify {
                 out << "end process;\n";
             }
         }
+        out << "-- Write to the CYCLE_data with the cycle_cnt\n";
+        out << "write_cycle_counter_proc : process\n";
+        out << "	file fp             : TEXT;\n";
+        out << "	variable fstatus    : FILE_OPEN_STATUS;\n";
+        out << "	variable token_line : LINE;\n";
+        out << "	variable token      : STRING(1 to 1024);\n";
+        out << "\n";
+        out << "begin\n";
+        out << "	while transaction_idx /= TRANSACTION_NUM loop\n";
+        out << "		wait until tb_clk'event and tb_clk = '1';\n";
+        out << "	end loop;\n";
+        out << "	wait until tb_clk'event and tb_clk = '1';\n";
+        out << "	wait until tb_clk'event and tb_clk = '1';\n";
+        out << "	file_open(fstatus, fp, CYCLE_data, WRITE_MODE);\n";
+        out << "	if (fstatus /= OPEN_OK) then\n";
+        out << "		assert false report \"Open file \" & CYCLE_data & \" failed!!!\" severity note;\n";
+        out << "	end if;\n";
+        out << "	write(token_line, integer'image(cycle_cnt));\n";
+        out << "	writeline(fp, token_line);\n";
+        out << "	file_close(fp);\n";
+        out << "	wait;\n";
+        out << "end process;\n";
         out << "----------------------------------------------------------------------------\n\n";
         return out.str();
     }

@@ -2219,6 +2219,79 @@ begin
 end architecture;
 
 -----------------------------------------------------------------------
+-- fcmp ult, version 0.0
+-----------------------------------------------------------------------
+Library IEEE;
+use IEEE.std_logic_1164.all;
+use ieee.numeric_std.all;
+use work.customTypes.all;
+
+entity fcmp_ult_op is
+Generic (
+INPUTS:integer; OUTPUTS:integer; DATA_SIZE_IN: integer; DATA_SIZE_OUT: integer
+);
+    port (
+    clk, rst : in std_logic; 
+    dataInArray : in std_logic_vector(2*DATA_SIZE_IN-1 downto 0); 
+    dataOutArray : inout std_logic_vector(DATA_SIZE_OUT-1 downto 0);      
+    pValidArray : in std_logic_vector(1 downto 0);
+    nReadyArray : in std_logic_vector(0 downto 0);
+    validArray : inout std_logic_vector(0 downto 0);
+    readyArray : inout std_logic_vector(1 downto 0));
+end entity;
+
+architecture arch of fcmp_ult_op is
+
+    signal cmp_out: STD_LOGIC_VECTOR (0 downto 0);
+    signal cmp_valid, cmp_ready : STD_LOGIC;
+
+    signal join_valid : STD_LOGIC;
+    signal join_ReadyArray : std_logic_vector(1 downto 0);
+    signal nready_tmp : std_logic;
+
+begin 
+
+    join_write_temp:   entity work.dass_join(arch) generic map(2)
+            port map( pValidArray,  --pValidArray
+                      cmp_ready,     --nready                    
+                      join_valid,         --valid          
+                      readyArray);   --readyarray 
+
+    cmp: entity work.ALU_floatCmp (olt)
+            port map (clk, rst,
+                     join_valid,     --pvalid,
+                     nReadyArray(0),         --nready,
+                     cmp_valid, --valid,
+                     cmp_ready, --ready,
+                     dataInArray(DATA_SIZE_IN-1 downto 0),           --din0
+                     dataInArray(2*DATA_SIZE_IN-1 downto DATA_SIZE_IN),           --din1
+                     cmp_out);  --dout
+
+    process(clk, rst) is
+
+          begin
+
+           if (rst = '1') then
+
+                   validArray(0)  <= '0';
+                   dataOutArray(0) <= '0';
+                               
+            elsif (rising_edge(clk)) then
+                  if (cmp_valid= '1') then
+                        validArray(0)   <= '1';
+                        dataOutArray <= cmp_out;
+                    else
+                      if (nReadyArray(0) = '1') then
+                         validArray(0)  <= '0';
+                         dataOutArray(0) <= '0';
+                    end if;
+                   end if;
+             end if;
+    end process; 
+
+end architecture;
+
+-----------------------------------------------------------------------
 -- dcmp alu, version 0.0
 -----------------------------------------------------------------------
 

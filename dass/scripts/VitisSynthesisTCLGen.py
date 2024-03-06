@@ -63,11 +63,11 @@ def main():
                             tcl.write("import_ip "+pwd+"/"+ipFile+"\n")
     if target == 'zynq':
         # float libraries
-        tcl.write("import_ip "+dass_dir+"/dass/xlibs/syn_zynq/fop/tmp.srcs/sources_1/ip/fop_ap_fdiv_14_no_dsp_32/fop_ap_fdiv_14_no_dsp_32.xci\n")
-        tcl.write("import_ip "+dass_dir+"/dass/xlibs/syn_zynq/fop/tmp.srcs/sources_1/ip/fop_ap_fadd_3_full_dsp_32/fop_ap_fadd_3_full_dsp_32.xci\n")
-        tcl.write("import_ip "+dass_dir+"/dass/xlibs/syn_zynq/fop/tmp.srcs/sources_1/ip/fop_ap_fmul_2_max_dsp_32/fop_ap_fmul_2_max_dsp_32.xci\n")
-        tcl.write("import_ip "+dass_dir+"/dass/xlibs/syn_zynq/fop/tmp.srcs/sources_1/ip/fop_ap_fcmp_0_no_dsp_32/fop_ap_fcmp_0_no_dsp_32.xci\n")
-        tcl.write("import_ip "+dass_dir+"/dass/xlibs/syn_zynq/fop/tmp.srcs/sources_1/ip/fop_ap_fsub_3_full_dsp_32/fop_ap_fsub_3_full_dsp_32.xci\n")
+        tcl.write("import_ip "+dass_dir+"/dass/xlibs/syn_zynq/fop/tmp.srcs/sources_1/ip/fop_fdiv_32ns_32ns_32_16_no_dsp_1_ip/fop_fdiv_32ns_32ns_32_16_no_dsp_1_ip.xci\n")
+        tcl.write("import_ip "+dass_dir+"/dass/xlibs/syn_zynq/fop/tmp.srcs/sources_1/ip/fop_fadd_32ns_32ns_32_5_full_dsp_1_ip/fop_fadd_32ns_32ns_32_5_full_dsp_1_ip.xci\n")
+        tcl.write("import_ip "+dass_dir+"/dass/xlibs/syn_zynq/fop/tmp.srcs/sources_1/ip/fop_fmul_32ns_32ns_32_4_max_dsp_1_ip/fop_fmul_32ns_32ns_32_4_max_dsp_1_ip.xci\n")
+        tcl.write("import_ip "+dass_dir+"/dass/xlibs/syn_zynq/fop/tmp.srcs/sources_1/ip/fop_fcmp_32ns_32ns_1_2_no_dsp_1_ip/fop_fcmp_32ns_32ns_1_2_no_dsp_1_ip.xci\n")
+        tcl.write("import_ip "+dass_dir+"/dass/xlibs/syn_zynq/fop/tmp.srcs/sources_1/ip/fop_fsub_32ns_32ns_32_5_full_dsp_1_ip/fop_fsub_32ns_32ns_32_5_full_dsp_1_ip.xci\n")
 
         # double libraries
         # TODO

@@ -1,17 +1,18 @@
 -- ==============================================================
--- Vitis HLS - High-Level Synthesis from C, C++ and OpenCL v2020.2 (64-bit)
--- Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+-- Vitis HLS - High-Level Synthesis from C, C++ and OpenCL v2022.2 (64-bit)
+-- Version: 2022.2
+-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 -- ==============================================================
 Library ieee;
 use ieee.std_logic_1164.all;
 
 entity dop_dmul_64ns_64ns_64_7_max_dsp_1 is
     generic (
-        ID         : integer := 3;
-        NUM_STAGE  : integer := 7;
-        din0_WIDTH : integer := 64;
-        din1_WIDTH : integer := 64;
-        dout_WIDTH : integer := 64
+        ID         : integer := 1;
+        NUM_STAGE  : integer := 3;
+        din0_WIDTH : integer := 32;
+        din1_WIDTH : integer := 32;
+        dout_WIDTH : integer := 32
     );
     port (
         clk   : in  std_logic;
@@ -25,27 +26,27 @@ end entity;
 
 architecture arch of dop_dmul_64ns_64ns_64_7_max_dsp_1 is
     --------------------- Component ---------------------
-    component dop_ap_dmul_5_max_dsp_64 is
+    component dop_dmul_64ns_64ns_64_7_max_dsp_1_ip is
         port (
             aclk                 : in  std_logic;
             aclken               : in  std_logic;
             s_axis_a_tvalid      : in  std_logic;
-            s_axis_a_tdata       : in  std_logic_vector(63 downto 0);
+            s_axis_a_tdata       : in  std_logic_vector(din0_WIDTH-1 downto 0);
             s_axis_b_tvalid      : in  std_logic;
-            s_axis_b_tdata       : in  std_logic_vector(63 downto 0);
+            s_axis_b_tdata       : in  std_logic_vector(din1_WIDTH-1 downto 0);
             m_axis_result_tvalid : out std_logic;
-            m_axis_result_tdata  : out std_logic_vector(63 downto 0)
+            m_axis_result_tdata  : out std_logic_vector(dout_WIDTH-1 downto 0)
         );
     end component;
     --------------------- Local signal ------------------
     signal aclk      : std_logic;
     signal aclken    : std_logic;
     signal a_tvalid  : std_logic;
-    signal a_tdata   : std_logic_vector(63 downto 0);
+    signal a_tdata  : std_logic_vector(din0_WIDTH-1 downto 0);
     signal b_tvalid  : std_logic;
-    signal b_tdata   : std_logic_vector(63 downto 0);
+    signal b_tdata  : std_logic_vector(din1_WIDTH-1 downto 0);
     signal r_tvalid  : std_logic;
-    signal r_tdata   : std_logic_vector(63 downto 0);
+    signal r_tdata  : std_logic_vector(dout_WIDTH-1 downto 0);
     signal din0_buf1 : std_logic_vector(din0_WIDTH-1 downto 0);
     signal din1_buf1 : std_logic_vector(din1_WIDTH-1 downto 0);
     signal ce_r      : std_logic;
@@ -53,7 +54,7 @@ architecture arch of dop_dmul_64ns_64ns_64_7_max_dsp_1 is
     signal dout_r    : std_logic_vector(dout_WIDTH-1 downto 0);
 begin
     --------------------- Instantiation -----------------
-    dop_ap_dmul_5_max_dsp_64_u : component dop_ap_dmul_5_max_dsp_64
+    dop_dmul_64ns_64ns_64_7_max_dsp_1_ip_u : component dop_dmul_64ns_64ns_64_7_max_dsp_1_ip
     port map (
         aclk                 => aclk,
         aclken               => aclken,

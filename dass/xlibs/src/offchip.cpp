@@ -37,7 +37,7 @@ int main() {
 
   a0.write_nb(10);
   a1.write_nb(10);
-  load(a0, A, b);
-  store(a1, b, A);
+  xload(a0, A, b);
+  xstore(a1, b, A);
   return 0;
 }

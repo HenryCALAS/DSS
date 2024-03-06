@@ -108,7 +108,7 @@ void generate_xsim_scripts(const VerificationContext &ctx) {
   proj.close();
 
   ofstream tcl("proj.tcl");
-  tcl << "\n#log_wave -r /\nrun 300000ns\nquit\n";
+  tcl << "\n#log_wave -r /\nrun 30000000ns\nquit\n";
   // tcl << "\n#log_wave -r /\nrun 100000ns\nquit\n";
   tcl.close();
 
@@ -123,7 +123,7 @@ void generate_xsim_scripts(const VerificationContext &ctx) {
      << "-L unisims "
      << "-L unisims_ver "
      << "-L xpm  -L floating_point_v7_0_18 "
-     << "-L floating_point_v7_1_11 "
+     << "-L floating_point_v7_1_15 "
      << "--lib \"ieee_proposed=./ieee_proposed\" "
      << "-s proj\n"
      << "xsim "

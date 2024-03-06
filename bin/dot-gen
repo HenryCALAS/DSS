@@ -19,7 +19,7 @@ $OPT -load $DASS/dhls/elastic-circuits/build/MemElemInfo/libLLVMMemElemInfo.so \
 -load $DASS/dhls/elastic-circuits/build/ElasticPass/libElasticPass.so \
 -load $DASS/dhls/elastic-circuits/build/OptimizeBitwidth/libLLVMOptimizeBitWidth.so \
 -load $DASS/dhls/elastic-circuits/build/MyCFGPass/libMyCFGPass.so \
--polly-process-unprofitable -mycfgpass -use-lsq=$useLSQ -export-dot=true -optimize-if=false \
+-polly-process-unprofitable -mycfgpass -use-lsq=$useLSQ -export-dot=true \
 $IN -S  > /dev/null
 
 dot -Tpng $NAME.dot > $NAME.png

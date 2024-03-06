@@ -1,12 +1,13 @@
 -- ==============================================================
--- Vitis HLS - High-Level Synthesis from C, C++ and OpenCL v2020.2 (64-bit)
--- Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+-- Vitis HLS - High-Level Synthesis from C, C++ and OpenCL v2022.2 (64-bit)
+-- Version: 2022.2
+-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 -- ==============================================================
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity intop_srem_32ns_32ns_32_36_1_div_u is
+entity intop_srem_32ns_32ns_32_36_1_divider is
     generic (
         in0_WIDTH   : INTEGER :=32;
         in1_WIDTH   : INTEGER :=32;
@@ -31,7 +32,7 @@ entity intop_srem_32ns_32ns_32_36_1_div_u is
 
 end entity;
 
-architecture rtl of intop_srem_32ns_32ns_32_36_1_div_u is
+architecture rtl of intop_srem_32ns_32ns_32_36_1_divider is
     constant cal_WIDTH      : INTEGER := max(in0_WIDTH, in1_WIDTH);
     type  in0_vector  is array(INTEGER range <>) of UNSIGNED(in0_WIDTH-1 downto 0);
     type  in1_vector  is array(INTEGER range <>) of UNSIGNED(in1_WIDTH-1 downto 0);
@@ -89,23 +90,24 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity intop_srem_32ns_32ns_32_36_1_div is
+entity intop_srem_32ns_32ns_32_36_1 is
     generic (
-        in0_WIDTH   : INTEGER :=32;
-        in1_WIDTH   : INTEGER :=32;
-        out_WIDTH   : INTEGER :=32);
+        ID   : INTEGER :=1;
+        NUM_STAGE   : INTEGER :=2;
+        din0_WIDTH   : INTEGER :=32;
+        din1_WIDTH   : INTEGER :=32;
+        dout_WIDTH   : INTEGER :=32);
     port (
         clk         : in  STD_LOGIC;
         reset       : in  STD_LOGIC;
         ce          : in  STD_LOGIC;
-        dividend    : in  STD_LOGIC_VECTOR(in0_WIDTH-1 downto 0);
-        divisor     : in  STD_LOGIC_VECTOR(in1_WIDTH-1 downto 0);
-        quot        : out STD_LOGIC_VECTOR(out_WIDTH-1 downto 0);
-        remd        : out STD_LOGIC_VECTOR(out_WIDTH-1 downto 0));
+        din0        : in  STD_LOGIC_VECTOR(din0_WIDTH-1 downto 0);
+        din1        : in  STD_LOGIC_VECTOR(din1_WIDTH-1 downto 0);
+        dout        : out STD_LOGIC_VECTOR(dout_WIDTH-1 downto 0));
 end entity;
 
-architecture rtl of intop_srem_32ns_32ns_32_36_1_div is
-    component intop_srem_32ns_32ns_32_36_1_div_u is
+architecture rtl of intop_srem_32ns_32ns_32_36_1 is
+    component intop_srem_32ns_32ns_32_36_1_divider is
         generic (
             in0_WIDTH   : INTEGER :=32;
             in1_WIDTH   : INTEGER :=32;
@@ -122,20 +124,22 @@ architecture rtl of intop_srem_32ns_32ns_32_36_1_div is
             remd        : out STD_LOGIC_VECTOR(out_WIDTH-1 downto 0));
     end component;
 
-    signal dividend0  : STD_LOGIC_VECTOR(in0_WIDTH-1 downto 0);
-    signal divisor0   : STD_LOGIC_VECTOR(in1_WIDTH-1 downto 0);
-    signal dividend_u : STD_LOGIC_VECTOR(in0_WIDTH-1 downto 0);
-    signal divisor_u  : STD_LOGIC_VECTOR(in1_WIDTH-1 downto 0);
-    signal quot_u     : STD_LOGIC_VECTOR(out_WIDTH-1 downto 0);
-    signal remd_u     : STD_LOGIC_VECTOR(out_WIDTH-1 downto 0);
+    signal dividend0  : STD_LOGIC_VECTOR(din0_WIDTH-1 downto 0);
+    signal divisor0   : STD_LOGIC_VECTOR(din1_WIDTH-1 downto 0);
+    signal dividend_u : STD_LOGIC_VECTOR(din0_WIDTH-1 downto 0);
+    signal divisor_u  : STD_LOGIC_VECTOR(din1_WIDTH-1 downto 0);
+    signal quot_u     : STD_LOGIC_VECTOR(dout_WIDTH-1 downto 0);
+    signal remd_u     : STD_LOGIC_VECTOR(dout_WIDTH-1 downto 0);
+    signal quot       : STD_LOGIC_VECTOR(dout_WIDTH-1 downto 0);
+    signal remd       : STD_LOGIC_VECTOR(dout_WIDTH-1 downto 0);
     signal sign_i     : STD_LOGIC_VECTOR(1 downto 0);
     signal sign_o     : STD_LOGIC_VECTOR(1 downto 0);
 begin
-    intop_srem_32ns_32ns_32_36_1_div_u_0 : intop_srem_32ns_32ns_32_36_1_div_u
+    intop_srem_32ns_32ns_32_36_1_divider_u : intop_srem_32ns_32ns_32_36_1_divider
         generic map(
-            in0_WIDTH   => in0_WIDTH,
-            in1_WIDTH   => in1_WIDTH,
-            out_WIDTH   => out_WIDTH)
+            in0_WIDTH   => din0_WIDTH,
+            in1_WIDTH   => din1_WIDTH,
+            out_WIDTH   => dout_WIDTH)
         port map(
             clk         => clk,
             reset       => reset,
@@ -147,16 +151,16 @@ begin
             quot        => quot_u,
             remd        => remd_u);
 
-    sign_i      <= (dividend0(in0_WIDTH-1) xor divisor0(in1_WIDTH-1)) & dividend0(in0_WIDTH-1);
-    dividend_u  <= STD_LOGIC_VECTOR(UNSIGNED(not dividend0) + 1) when dividend0(in0_WIDTH-1) = '1' else dividend0;
-    divisor_u   <= STD_LOGIC_VECTOR(UNSIGNED(not divisor0) + 1) when divisor0(in1_WIDTH-1) = '1' else divisor0;
+    sign_i      <= (dividend0(din0_WIDTH-1) xor divisor0(din1_WIDTH-1)) & dividend0(din0_WIDTH-1);
+    dividend_u  <= STD_LOGIC_VECTOR(UNSIGNED(not dividend0) + 1) when dividend0(din0_WIDTH-1) = '1' else dividend0;
+    divisor_u   <= STD_LOGIC_VECTOR(UNSIGNED(not divisor0) + 1) when divisor0(din1_WIDTH-1) = '1' else divisor0;
 
 process (clk)
 begin
     if (clk'event and clk = '1') then
         if (ce = '1') then
-            dividend0 <= dividend;
-            divisor0 <= divisor;
+            dividend0 <= din0;
+            divisor0 <= din1;
         end if;
     end if;
 end process;
@@ -187,62 +191,7 @@ begin
     end if;
 end process;
 
-end architecture;
-
-
-Library IEEE;
-use IEEE.std_logic_1164.all;
-
-entity intop_srem_32ns_32ns_32_36_1 is
-    generic (
-        ID : INTEGER;
-        NUM_STAGE : INTEGER;
-        din0_WIDTH : INTEGER;
-        din1_WIDTH : INTEGER;
-        dout_WIDTH : INTEGER);
-    port (
-        clk : IN STD_LOGIC;
-        reset : IN STD_LOGIC;
-        ce : IN STD_LOGIC;
-        din0 : IN STD_LOGIC_VECTOR(din0_WIDTH - 1 DOWNTO 0);
-        din1 : IN STD_LOGIC_VECTOR(din1_WIDTH - 1 DOWNTO 0);
-        dout : OUT STD_LOGIC_VECTOR(dout_WIDTH - 1 DOWNTO 0));
-end entity;
-
-architecture arch of intop_srem_32ns_32ns_32_36_1 is
-    component intop_srem_32ns_32ns_32_36_1_div is
-        generic (
-            in0_WIDTH : INTEGER;
-            in1_WIDTH : INTEGER;
-            out_WIDTH : INTEGER);
-        port (
-            dividend : IN STD_LOGIC_VECTOR;
-            divisor : IN STD_LOGIC_VECTOR;
-            remd : OUT STD_LOGIC_VECTOR;
-            quot : OUT STD_LOGIC_VECTOR;
-            clk : IN STD_LOGIC;
-            ce : IN STD_LOGIC;
-            reset : IN STD_LOGIC);
-    end component;
-
-    signal sig_quot : STD_LOGIC_VECTOR(dout_WIDTH - 1 DOWNTO 0);
-    signal sig_remd : STD_LOGIC_VECTOR(dout_WIDTH - 1 DOWNTO 0);
-
-
-begin
-    intop_srem_32ns_32ns_32_36_1_div_U :  component intop_srem_32ns_32ns_32_36_1_div
-    generic map (
-        in0_WIDTH => din0_WIDTH,
-        in1_WIDTH => din1_WIDTH,
-        out_WIDTH => dout_WIDTH)
-    port map (
-        dividend => din0,
-        divisor => din1,
-        remd => dout,
-        quot => sig_quot,
-        clk => clk,
-        ce => ce,
-        reset => reset);
+dout <= remd;
 
 end architecture;
 

@@ -6,6 +6,7 @@
 # ----------------------------------------
 
 from optparse import OptionParser
+import argparse
 import sys, os, time, logging, colorlog, glob, subprocess, multiprocessing, shutil, functools
 
 # ---------- helper functions --------------
@@ -75,6 +76,7 @@ class dass:
         self.root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         self.clang = os.path.join(self.root, "llvm", "build", "bin", "clang")
         self.opt = os.path.join(self.root, "llvm", "build", "bin", "opt")
+        self.llvmlink = os.path.join(self.root, "llvm", "build", "bin", "llvm-link")
         self.top = self.options.top
         
         header = '''
@@ -142,7 +144,7 @@ class dass:
             result = subprocess.run(cmd, stdout = subprocess.DEVNULL, cwd = cwd)
         if result.returncode:
             self.logger.error('Command failed: {}'.format(subprocess.list2cmdline(cmd)))
-            sys.exit()
+            sys.exit(1)
         return result.returncode
  
     def evaluate(self):
@@ -164,12 +166,17 @@ class dass:
         simdirs = ['C_OUT', 'C_SRC', 'HLS_VERIFY', 'INPUT_VECTORS', 'VHDL_OUT', 'VHDL_SRC']
         for simdir in simdirs:
             os.mkdir(os.path.join('sim', simdir))
-        for p in glob.glob('{}.c*'.format(self.top)) + glob.glob('{}.h*'.format(self.top)):
+        for p in self.options.synfiles:
             shutil.copy(p, os.path.join('sim', 'C_SRC'))
+            for i in glob.glob(os.path.join(os.path.dirname(p), '*.h*')):
+                shutil.copy(i, os.path.join('sim', 'C_SRC'))
         for p in glob.glob(os.path.join('rtl', '*')):
             shutil.copy(p, os.path.join('sim', 'VHDL_SRC'))
         hlsverifier = os.path.join(self.root, 'dass', 'tools', 'HlsVerifier', 'build', 'hlsverifier')
-        cfile = glob.glob('{}.c*'.format(self.top))[0]
+        # hlsverifier = "/home/yuhan/dynamatic/Regression_test/hls_verifier/HlsVerifier/build/hlsverifier"
+        # this is ugly
+        # cfile = glob.glob('{}.c*'.format(self.top))[0]
+        cfile = os.path.basename(self.options.synfiles[0])
         cmd = [hlsverifier, 'cover', '-aw32', os.path.join('..', 'C_SRC', cfile), os.path.join('..', 'C_SRC', cfile), self.top]
         self.logger.debug(subprocess.list2cmdline(cmd))
         runcosim = self.execute(cmd, logfile = os.path.join('sim', 'HLS_VERIFY', 'transcript'), cwd = os.path.join('sim', 'HLS_VERIFY'))
@@ -348,9 +355,13 @@ class dass:
             shutil.copy(self.options.llvminput, '{}.ll'.format(self.top))
         else:
             # prase pragmas
-            cfiles = glob.glob('*.c*')
+            # cfiles = glob.glob('*.c*')
+            synfiles = []
+            for files in self.options.synfiles:
+                synfiles.extend(glob.glob(files))
             pragmaparser = os.path.join(self.root, 'dass', 'scripts', 'PragmaParser.py')
-            cmd = ['python3', pragmaparser] + cfiles
+            cmd = ['python3', pragmaparser] + synfiles
+            self.logger.info(f'files to be synthesized {synfiles}')
             self.logger.debug(subprocess.list2cmdline(cmd))
             parsepragmas = self.execute(cmd)
             # llvm and dass front end
@@ -358,9 +369,19 @@ class dass:
             cmd = [self.clang, '-Xclang']
             if not self.options.disableopt:
                 cmd = cmd + ['-disable-O0-optnone']
-            cmd = cmd + ['-emit-llvm', '-S', '-g', '-c'] + cfiles + ['-o', '{}_0.ll'.format(self.top)]
+            # cmd = cmd + ['-emit-llvm', '-S', '-g', '-c'] + cfiles + ['-o', '{}_0.ll'.format(self.top)]
+            cmd = cmd + ['-emit-llvm', '-S', '-g', '-c', '-fno-use-cxa-atexit']
+            for src in synfiles:
+                syn_cmd = cmd.copy()
+                syn_cmd.append(src)
+                syn_cmd = syn_cmd + ['-o', f'{src}_tmp.ll']
+                self.logger.debug(subprocess.list2cmdline(syn_cmd))
+                tmp_clangfrontend = self.execute(syn_cmd)
+            cmd = [self.llvmlink] + [f'{src}_tmp.ll' for src in synfiles] + ['-o', f'{self.top}_0.ll']
             self.logger.debug(subprocess.list2cmdline(cmd))
             clangfrontend = self.execute(cmd)
+            for file in synfiles:
+                os.remove(f'{src}_tmp.ll')
             cmd = [self.opt, '-load', dassfrontendlib, '-name-loops', '-strip-debug', '-S', '{}_0.ll'.format(self.top), '-o', '{}_1.ll'.format(self.top)]
             self.logger.debug(subprocess.list2cmdline(cmd))
             dassllvmpreprocess = self.execute(cmd)
@@ -397,57 +418,60 @@ def main():
         sys.exit()
 
     optparser = OptionParser()
+    argparser = argparse.ArgumentParser()
 
     # Processes
-    optparser.add_option("-s", "--synthesis", action="store_true", dest="synthesis",
+    argparser.add_argument("-s", "--synthesis", action="store_true", dest="synthesis",
                          default=False, help="Synthesize designs, Default=False")
-    optparser.add_option("-j", "--jobs", dest="jobs",
+    argparser.add_argument("-j", "--jobs", dest="jobs",
                          default=str(int(multiprocessing.cpu_count()/2)), help="Jobs, Default=half of the total cores")
                          # default='1', help="Jobs, Default=1")
-    optparser.add_option("-e", "--evaluate", action="store_true", dest="evaluate",
+    argparser.add_argument("-e", "--evaluate", action="store_true", dest="evaluate",
                          default=False, help="Evaluate synthesis results, Default=False")
-    optparser.add_option("-c", "--cosim", action="store_true", dest="cosim",
+    argparser.add_argument("-c", "--cosim", action="store_true", dest="cosim",
                          default=False, help="Enable cosimulation, Default=False")
     
     # Configurations
-    optparser.add_option("-t", "--top", dest="top",
+    argparser.add_argument("synfiles", nargs='+',
+                         help="source files")
+    argparser.add_argument("-t", "--top", dest="top",
                          default="TOP", help="Top module, Default=TOP")
-    optparser.add_option("-l", "--uselsq", action="store_true", dest="uselsq",
+    argparser.add_argument("-l", "--uselsq", action="store_true", dest="uselsq",
                          default=False, help="Use LSQs, Default=True")
-    optparser.add_option("-b", "--simplebuffers", action="store_true", dest="simplebuffers",
+    argparser.add_argument("-b", "--simplebuffers", action="store_true", dest="simplebuffers",
                          default=False, help="Insert simple buffers Default=False")
-    optparser.add_option("--offset", action="store_true", dest="offset",
+    argparser.add_argument("--offset", action="store_true", dest="offset",
                          default=True, help="Enable offset, Default=True")
-    optparser.add_option("--auto-ifconv", action="store_true", dest="ifconv",
+    argparser.add_argument("--auto-ifconv", action="store_true", dest="ifconv",
                          default=False, help="Enable if conversion, Default=False")
-    optparser.add_option("--auto-cslowppl", action="store_true", dest="cslowppl",
+    argparser.add_argument("--auto-cslowppl", action="store_true", dest="cslowppl",
                          default=False, help="Enable c slow pipelining, Default=False")
-    optparser.add_option("--disable-opt", action="store_true", dest="disableopt",
+    argparser.add_argument("--disable-opt", action="store_true", dest="disableopt",
                          default=False, help="Disable llvm O0 optimization, Default=False")
-    optparser.add_option("--auto-parallelloops", action="store_true", dest="parallelloops",
+    argparser.add_argument("--auto-parallelloops", action="store_true", dest="parallelloops",
                          default=False, help="Enable parallel loops, Default=False")
-    optparser.add_option("--skip-frontend", action="store_true", dest="skipfrontend",
+    argparser.add_argument("--skip-frontend", action="store_true", dest="skipfrontend",
                          default=False, help="Skip frontend, Default=False")
-    optparser.add_option("--skip-buffer", action="store_true", dest="skipbuffer",
+    argparser.add_argument("--skip-buffer", action="store_true", dest="skipbuffer",
                          default=False, help="Skip buffer stage, Default=False")
-    optparser.add_option("--skip-buffer-mini", action="store_true", dest="skipbuffermini",
+    argparser.add_argument("--skip-buffer-mini", action="store_true", dest="skipbuffermini",
                          default=False, help="Skip dhls buffer stage, Default=False")
-    optparser.add_option("--auto-dass", action="store_true", dest="autodass",
+    argparser.add_argument("--auto-dass", action="store_true", dest="autodass",
                          default=False, help="Automatically find static islands, Default=False")
-    optparser.add_option("--export-png", action="store_true", dest="exportpng",
+    argparser.add_argument("--export-png", action="store_true", dest="exportpng",
                          default=False, help="Export png, Default=False")
-    optparser.add_option("--super-buff-depth", dest="superbuffdepth",
+    argparser.add_argument("--super-buff-depth", dest="superbuffdepth",
                          default=0, help="Insert transparent fifos with specified depth in each edge, Default=0")
-    optparser.add_option("--super-buff-nontrans", action="store_true", dest="superbuffnontrans",
+    argparser.add_argument("--super-buff-nontrans", action="store_true", dest="superbuffnontrans",
                          default=False, help="Use nontransparent buffers in super buffer, Default=False")
-    optparser.add_option("--llvm", dest="llvminput",
+    argparser.add_argument("--llvm", dest="llvminput",
                          default=None, help="Input llvm file, Default=None")
-    optparser.add_option("--dot", dest="dotinput",
+    argparser.add_argument("--dot", dest="dotinput",
                          default=None, help="Input dot file, Default=None")
-    optparser.add_option("--target", dest="target",
+    argparser.add_argument("--target", dest="target",
                          default="zynq", help="Target device: zynq/xcvu, Default=zynq")
 
-    (options, args) = optparser.parse_args()
+    options = argparser.parse_args()
 
     dasshls = dass(options)
     dasshls.run()

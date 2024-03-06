@@ -464,7 +464,7 @@ static void functionalise(ENode_vec &enodes, int islandID,
     callArgs.push_back(outs[i]);
   }
   // Create call
-  builder.SetInsertPoint(tempInsts[0]);
+  builder.SetInsertPoint(tempInsts.back());
   builder.CreateCall(ssfunc->getFunctionType(), ssfunc, callArgs);
   // Create load
   for (auto i = 0; i < outs.size(); i++) {
@@ -477,9 +477,9 @@ static void functionalise(ENode_vec &enodes, int islandID,
     for (auto tmpInst = tempInsts.rbegin(); tmpInst != tempInsts.rend();
          tmpInst++) {
       Instruction *inst = *tmpInst;
-      if (inst->use_empty()) {
+      if (inst->use_empty() || true) {
         tempInsts.erase(std::find(tempInsts.begin(), tempInsts.end(), inst));
-        inst->eraseFromParent();
+        // inst->eraseFromParent();
         done = true;
       }
     }
@@ -517,7 +517,7 @@ bool StaticInstrPass::runOnModule(Module &M) {
   for (auto &F : M) {
     auto fname = demangleFuncName(F.getName().str().c_str());
     // Also skip pre-defined static functions
-    if (fname != "main" && !F.hasFnAttribute("dass_ss"))
+    if (fname != "main" && !F.hasFnAttribute("dass_ss") && !F.isDeclaration())
       fList.push_back(&F);
   }
 
@@ -835,7 +835,7 @@ bool StaticControlLoopPass::runOnModule(Module &M) {
   for (auto &F : M) {
     auto fname = demangleFuncName(F.getName().str().c_str());
     // Also skip pre-defined static functions
-    if (fname != "main" && !F.hasFnAttribute("dass_ss"))
+    if (fname != "main" && !F.hasFnAttribute("dass_ss") && !F.isDeclaration())
       fList.push_back(&F);
   }
 
@@ -1084,7 +1084,7 @@ bool StaticMemoryLoopPass::runOnModule(Module &M) {
   for (auto &F : M) {
     auto fname = demangleFuncName(F.getName().str().c_str());
     // Also skip pre-defined static functions
-    if (fname != "main" && !F.hasFnAttribute("dass_ss"))
+    if (fname != "main" && !F.hasFnAttribute("dass_ss") && !F.isDeclaration())
       fList.push_back(&F);
   }
 
@@ -1146,6 +1146,83 @@ char StaticMemoryLoopPass::ID = 1;
 static RegisterPass<StaticMemoryLoopPass>
     X("get-static-loops-mem", "Create static loops based on memory dependence",
       false, false);
+
+//--------------------------------------------------------//
+// Pass declaration
+//--------------------------------------------------------//
+
+static std::vector<Instruction *> 
+getUnused(ENode_vec &enodes, int islandID,
+                          ENode_int_map &staticMap, Function *F) {
+  // Get function arguments, results and instructions
+  std::vector<Value *> inputs, results;
+  std::vector<Instruction *> insts;
+  for (auto enode : enodes) {
+    if (enode->type == Inst_)
+      insts.push_back(enode->Instr);
+  }
+
+  // return the unused instructions
+  return insts;
+
+}
+
+namespace {
+class RemoveUnused : public llvm::ModulePass {
+
+public:
+  static char ID;
+
+  RemoveUnused() : llvm::ModulePass(ID) {}
+
+  virtual void getAnalysisUsage(AnalysisUsage &AU) const;
+
+  bool runOnModule(Module &M) override;
+};
+} // namespace
+
+void RemoveUnused::getAnalysisUsage(AnalysisUsage &AU) const {
+  AU.addRequired<MyCFGPass>();
+}
+
+bool RemoveUnused::runOnModule(Module &M) {
+  std::vector<Function *> fList;
+  for (auto &F : M) {
+    auto fname = demangleFuncName(F.getName().str().c_str());
+    // Also skip pre-defined static functions
+    if (fname != "main" && !F.hasFnAttribute("dass_ss") && !F.isDeclaration())
+      fList.push_back(&F);
+  }
+
+  for (auto F : fList) {
+    // Get dot graph
+    auto &cdfg = getAnalysis<MyCFGPass>(*F);
+
+    // Extract Static Islands
+    ENode_int_map staticMap;
+    addStaticIslands(cdfg.enode_dag, staticMap);
+
+    // Rewrite function
+    for (int i = 0; i < cdfg.enode_dag->size(); i++)
+      if (auto island = getIslands(i, cdfg.enode_dag, staticMap)) {
+        auto unused = getUnused(island->nodes, i, staticMap, F);
+        std::reverse(unused.begin(),unused.end());
+        for (auto inst:unused) {
+          if (inst->use_empty())
+            inst->eraseFromParent();
+          else
+            assert(0 && "The instructions have other dependences");
+        }
+      }
+  }
+
+  return true;
+}
+
+char RemoveUnused::ID = 1;
+
+static RegisterPass<RemoveUnused>
+    W("remove-unused", "Remove the instructions of the static islands", false, false);
 
 /* for clang pass registration */
 #include "llvm/IR/LegacyPassManager.h"

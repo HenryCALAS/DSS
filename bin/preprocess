@@ -6,8 +6,8 @@ NAME=$1
 
 python3 $DASS/dass/scripts/PragmaParser.py $(ls *.c*)
 
-#$CLANG -Xclang -disable-O0-optnone -emit-llvm -S -g -c $NAME.c* -o ${NAME}_0.ll
-$CLANG -Xclang -emit-llvm -S -g -c $NAME.c* -o ${NAME}_0.ll
+$CLANG -Xclang -disable-O0-optnone -Xclang -DNDEBUG -emit-llvm -S -c $NAME.c* -o ${NAME}_0.ll
+# $CLANG -Xclang -emit-llvm -Xclang -DNDEBUG -S -c $NAME.c* -o ${NAME}_0.ll
 
 $OPT -load $DASS/dass/build/Frontend/libFrontend.so -name-loops -strip-debug -S ${NAME}_0.ll -o ${NAME}_1.ll
 

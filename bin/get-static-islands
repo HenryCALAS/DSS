@@ -30,4 +30,13 @@ $OPT -load $DASS/dhls/elastic-circuits/build/MemElemInfo/libLLVMMemElemInfo.so \
 -polly-process-unprofitable -get-static-instrs \
 ${NAME}_opt1.ll -S -o ${NAME}_opt.ll
 
+$OPT -load $DASS/dhls/elastic-circuits/build/MemElemInfo/libLLVMMemElemInfo.so \
+-load $DASS/dhls/elastic-circuits/build/ElasticPass/libElasticPass.so \
+-load $DASS/dhls/elastic-circuits/build/OptimizeBitwidth/libLLVMOptimizeBitWidth.so \
+-load $DASS/dhls/elastic-circuits/build/MyCFGPass/libMyCFGPass.so \
+-load $DASS/dass/build/StaticIslands/libStaticIslands.so \
+-remove-unused \
+${NAME}_opt.ll -S -o ${NAME}_opt.ll
+
+# $OPT -loop-rotate -S ${NAME}_opt.ll -o ${NAME}_ds.ll
 rm ${NAME}_opt0.ll ${NAME}_opt1.ll
